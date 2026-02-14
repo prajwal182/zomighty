@@ -1,0 +1,19 @@
+# --- Python & Virtual Environment ---
+xo/
+venv/
+__pycache__/
+*.pyc
+
+# --- Database ---
+*.db
+*.sqlite3
+app/app.db
+instance/
+
+# --- Environment Variables (Security) ---
+.env
+.flaskenv
+
+# --- OS Junk ---
+.DS_Store
+Thumbs.db
