@@ -2,6 +2,7 @@
 from flask import Flask
 from app.extensions import db, jwt
 from app.config import Config 
+from app.api.restaurants import restaurants_bp
 
 def create_app(config_class=Config):  # <--- 1. The "Machine" starts here
     app = Flask(__name__)             # <--- 2. Create a blank car chassis
@@ -19,5 +20,7 @@ def create_app(config_class=Config):  # <--- 1. The "Machine" starts here
     # So the route is now: POST /api/auth/register
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
 
-    
+    # Register the restaurants blueprint
+    app.register_blueprint(restaurants_bp, url_prefix='/api/restaurants')
+
     return app                        # <--- 5. Deliver the finished car

@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 # Get the base directory of the project
 basedir = os.path.abspath(os.path.dirname(__file__)) 
@@ -18,3 +19,5 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-super-secret-key' # Your Code: Used a hardcoded JWT secret key for simplicity, but this is not secure for production.
+
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1) # Tokens will expire after 1 day
