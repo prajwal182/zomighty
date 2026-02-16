@@ -3,6 +3,8 @@ from flask import Flask
 from app.extensions import db, jwt
 from app.config import Config 
 from app.api.restaurants import restaurants_bp
+from app.api.orders import orders_bp
+from app.errors import register_error_handlers
 
 def create_app(config_class=Config):  # <--- 1. The "Machine" starts here
     app = Flask(__name__)             # <--- 2. Create a blank car chassis
@@ -22,5 +24,13 @@ def create_app(config_class=Config):  # <--- 1. The "Machine" starts here
 
     # Register the restaurants blueprint
     app.register_blueprint(restaurants_bp, url_prefix='/api/restaurants')
+
+    # Register the orders blueprint
+    app.register_blueprint(orders_bp, url_prefix='/api/orders')  
+
+    # --- NEW: Register Error Handlers ---
+    # from app.errors import register_error_handlers
+    register_error_handlers(app)
+
 
     return app                        # <--- 5. Deliver the finished car

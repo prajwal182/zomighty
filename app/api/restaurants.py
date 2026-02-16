@@ -8,28 +8,60 @@ from flask_jwt_extended import jwt_required
 restaurants_bp = Blueprint('restaurants', __name__)
 
 # --- ROUTES GO HERE ---
+# @restaurants_bp.route('/', methods=['GET'])
+# def get_restaurants():
+#     restaurants = Restaurant.query.all()
+#     data = []
+#     for restaurant in restaurants:
+#         restaurant_data = {
+#             "id": restaurant.id,
+#             "name": restaurant.name,
+#             "description": restaurant.description,
+#             "address": restaurant.address,
+#             "image_url": restaurant.image_url,
+#             "menu_items": [
+#                 {
+#                     "id": item.id,
+#                     "name": item.name,
+#                     "description": item.description,
+#                     "price": item.price
+#                 } for item in restaurant.menu_items
+#             ]
+#         }
+#         data.append(restaurant_data)
+#     return jsonify(data), 200
+# ---Pagination added so the above route is now: GET /api/restaurants?page=1&per_page=10
 @restaurants_bp.route('/', methods=['GET'])
 def get_restaurants():
-    restaurants = Restaurant.query.all()
+    # 1. Get page number from URL (default is 1)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int) # Default 10 items per page
+
+    # 2. Use paginate() instead of all()
+    pagination = Restaurant.query.paginate(page=page, per_page=per_page, error_out=False)
+    restaurants = pagination.items # This is the list of items for THIS page only
+    
     data = []
-    for restaurant in restaurants:
-        restaurant_data = {
-            "id": restaurant.id,
-            "name": restaurant.name,
-            "description": restaurant.description,
-            "address": restaurant.address,
-            "image_url": restaurant.image_url,
-            "menu_items": [
-                {
-                    "id": item.id,
-                    "name": item.name,
-                    "description": item.description,
-                    "price": item.price
-                } for item in restaurant.menu_items
-            ]
+    for r in restaurants:
+        data.append({
+            "id": r.id,
+            "name": r.name,
+            "description": r.description,
+            "image_url": r.image_url,
+            "menu_items": [{"id": i.id, "name": i.name, "price": str(i.price)} for i in r.menu_items]
+        })
+    
+    # 3. Return Metadata (So the frontend knows how many pages exist)
+    return jsonify({
+        "restaurants": data,
+        "meta": {
+            "page": page,
+            "per_page": per_page,
+            "total_pages": pagination.pages,
+            "total_items": pagination.total
         }
-        data.append(restaurant_data)
-    return jsonify(data), 200
+    }), 200
+
 
 # create a restaurant
 @restaurants_bp.route('/', methods=['POST'])
