@@ -1,5 +1,9 @@
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Get the base directory of the project
 basedir = os.path.abspath(os.path.dirname(__file__)) 
@@ -8,16 +12,22 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 class Config:
     # 1. SECURITY: This is used to sign session cookies. 
     # In production, this should be a long random string from an .env file.
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'super-secret-key' # Your Code: Used a hardcoded secret key for simplicity, but this is not secure for production.
+    # SECRET_KEY = os.environ.get('SECRET_KEY') or 'super-secret-key' # Your Code: Used a hardcoded secret key for simplicity, but this is not secure for production.
+    SECRET_KEY = os.getenv('SECRET_KEY', 'default-secret-key')
+
 
     # 2. DATABASE: This tells SQLAlchemy where your database is.
     # We are using SQLite for now (stored in the 'app' folder as 'app.db').
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or \
-        'sqlite:///' + os.path.join(basedir, 'app.db')
-    
+    # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or \
+    #     'sqlite:///' + os.path.join(basedir, 'app.db')
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'app.db')
+
+
     # 3. PERFORMANCE: This disables a feature we don't need (tracking modifications consumes memory).
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-super-secret-key' # Your Code: Used a hardcoded JWT secret key for simplicity, but this is not secure for production.
+    # 4. JWT CONFIG: This is the secret key for signing JWT tokens.
+    # JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'jwt-super-secret-key' # Your Code: Used a hardcoded JWT secret key for simplicity, but this is not secure for production.
+    JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'default-jwt-secret')
 
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1) # Tokens will expire after 1 day
