@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Menu</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f8f9fa; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .menu-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .price { font-weight: bold; color: #28a745; }
+        .order-btn { background: #e23744; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+        .order-btn:hover { background: #c82333; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #e23744; text-decoration: none; }
+        /* Add this to your existing <style> tag */
+        .page-layout { display: flex; gap: 20px; }
+        .menu-section { flex: 2; }
+        .cart-section { flex: 1; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); height: fit-content; position: sticky; top: 20px; }
+        .cart-item { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .cart-total { font-size: 1.2rem; font-weight: bold; margin-top: 15px; text-align: right; border-top: 2px solid #333; padding-top: 10px; }
+        .checkout-btn { width: 100%; background: #28a745; color: white; border: none; padding: 12px; font-size: 1.1rem; border-radius: 5px; cursor: pointer; margin-top: 15px; }
+        .checkout-btn:hover { background: #218838; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">← Back to Restaurants</a>
+
+    <div class="page-layout">
+        <div class="menu-section" id="restaurantDetails">
+            <h2>Loading Menu...</h2>
+        </div>
+
+        <div class="cart-section">
+            <h3>Your Cart 🛒</h3>
+            <div id="cartItems">
+                <p style="color: #888;">Your cart is empty.</p>
+            </div>
+            <div class="cart-total" id="cartTotal">Total: ₹0.00</div>
+            <button class="checkout-btn" onclick="proceedToCheckout()">Proceed to Checkout</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Grab the ID from the URL (e.g., ?id=2)
+        const urlParams = new URLSearchParams(window.location.search);
+        const restaurantId = urlParams.get('id');
+
+        // 2. Fetch the specific restaurant from the Python API
+        async function loadMenu() {
+            if (!restaurantId) {
+                document.getElementById('restaurantDetails').innerHTML = "<h2>Restaurant not found!</h2>";
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/api/restaurants/${restaurantId}`);
+                const restaurant = await response.json();
+
+                let html = `
+                    <h1>${restaurant.name}</h1>
+                    <p>📍 ${restaurant.address}</p>
+                    <hr>
+                    <h3>Menu</h3>
+                `;
+
+                // Loop through the menu items and create the rows
+                restaurant.menu_items.forEach(item => {
+                    html += `
+                        <div class="menu-item">
+                            <div>
+                                <strong>${item.name}</strong>
+                            </div>
+                            <div>
+                                <span class="price">₹${item.price}</span>
+                                <button class="order-btn" onclick="addToCart(${item.id}, '${item.name}', ${item.price})">Add</button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('restaurantDetails').innerHTML = html;
+
+            } catch (error) {
+                console.error("Error fetching menu:", error);
+            }
+        }
+
+        // --- NEW CART LOGIC ---
+        let cart = []; // This array acts as our temporary memory (State)
+
+        function addToCart(itemId, itemName, itemPrice) {
+            // 1. Add the item to our JavaScript array
+            cart.push({ id: itemId, name: itemName, price: parseFloat(itemPrice) });
+            
+            // 2. Refresh the UI to show the new item
+            updateCartUI();
+        }
+
+        // 1. Add this new function to remove an item by its position (index) in the array
+        function removeFromCart(index) {
+            cart.splice(index, 1); // This removes 1 item at the specific index
+            updateCartUI(); // Redraw the cart
+        }
+
+        // 2. Update your updateCartUI() function to include the Delete button
+        function updateCartUI() {
+            const cartContainer = document.getElementById('cartItems');
+            const totalContainer = document.getElementById('cartTotal');
+            
+            if (cart.length === 0) {
+                cartContainer.innerHTML = '<p style="color: #888;">Your cart is empty.</p>';
+                totalContainer.innerText = 'Total: ₹0.00';
+                return;
+            }
+
+            let html = '';
+            let total = 0;
+
+            // Notice we pass the 'index' to the loop now
+            cart.forEach((item, index) => {
+                html += `
+                    <div class="cart-item">
+                        <span>${item.name}</span>
+                        <div>
+                            <span style="margin-right: 10px;">₹${item.price.toFixed(2)}</span>
+                            <button onclick="removeFromCart(${index})" style="background: none; border: none; color: red; cursor: pointer; font-size: 1.1rem;">❌</button>
+                        </div>
+                    </div>
+                `;
+                total += item.price;
+            });
+
+            cartContainer.innerHTML = html;
+            totalContainer.innerText = `Total: ₹${total.toFixed(2)}`;
+        }
+
+        function proceedToCheckout() {
+            if (cart.length === 0) {
+                alert("Please add some items to your cart first!");
+                return;
+            }
+            // Save the cart to the browser's memory so the next page can read it
+            localStorage.setItem('zomighty_cart', JSON.stringify(cart));
+            localStorage.setItem('zomighty_restaurant_id', restaurantId);
+            
+            // Redirect to the login/checkout flow
+            window.location.href = 'checkout.html';
+        }
+
+        // Run the function when the page loads
+        window.onload = loadMenu;
+    </script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Zomighty</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f8f9fa; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .checkout-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #e23744; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .order-summary { margin-top: 20px; }
+        .cart-item { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .total-row { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.2rem; margin-top: 20px; padding-top: 10px; border-top: 2px solid #333; }
+        .btn { width: 100%; padding: 15px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 1.1rem; cursor: pointer; margin-top: 25px; font-weight: bold; }
+        .btn:hover { background-color: #218838; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #e23744; text-decoration: none; }
+        #statusMessage { text-align: center; margin-top: 15px; font-weight: bold; display: none; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">← Back to Home</a>
+
+    <div class="checkout-container">
+        <h2>Final Checkout</h2>
+        
+        <div class="order-summary" id="orderSummary">
+            </div>
+
+        <div class="total-row">
+            <span>Total to Pay:</span>
+            <span id="finalTotal">₹0.00</span>
+        </div>
+
+        <button class="btn" id="placeOrderBtn" onclick="placeOrder()">Confirm & Place Order</button>
+        <p id="statusMessage"></p>
+    </div>
+
+    <script>
+        // 1. Grab the secure JWT token and the cart from the browser's memory
+        const token = localStorage.getItem('zomighty_token');
+        const cartData = localStorage.getItem('zomighty_cart');
+        const restaurantId = localStorage.getItem('zomighty_restaurant_id');
+
+        // 2. Security Check: If they have no token, kick them back to login
+        if (!token) {
+            alert("You must be logged in to checkout!");
+            window.location.href = 'login.html';
+        }
+
+        // 3. Load the cart onto the screen
+        let cart = [];
+        if (cartData) {
+            cart = JSON.parse(cartData);
+            let html = '';
+            let total = 0;
+
+            cart.forEach(item => {
+                html += `
+                    <div class="cart-item">
+                        <span>${item.name}</span>
+                        <span>₹${item.price.toFixed(2)}</span>
+                    </div>
+                `;
+                total += item.price;
+            });
+
+            document.getElementById('orderSummary').innerHTML = html;
+            document.getElementById('finalTotal').innerText = `₹${total.toFixed(2)}`;
+        } else {
+            document.getElementById('orderSummary').innerHTML = "<p>Your cart is empty.</p>";
+            document.getElementById('placeOrderBtn').style.display = 'none';
+        }
+
+        // 4. Send the order to the Python API
+        async function placeOrder() {
+            const btn = document.getElementById('placeOrderBtn');
+            const statusMsg = document.getElementById('statusMessage');
+            
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            try {
+                // We format it into the exact dictionary shape Python expects.
+                // (I also added a default quantity of 1, just in case your backend requires it!)
+                const itemPayload = cart.map(item => ({ 
+                    menu_item_id: item.id, 
+                    quantity: 1 
+                }));
+
+                const response = await fetch('http://127.0.0.1:5000/api/orders/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // THIS IS THE CRITICAL SECURITY KEY
+                    },
+                    body: JSON.stringify({
+                        restaurant_id: restaurantId,
+                        items: itemPayload // Sending the array of IDs
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusMsg.innerText = "✅ Order Placed Successfully!";
+                    statusMsg.style.color = "green";
+                    statusMsg.style.display = "block";
+                    btn.style.display = "none";
+                    
+                    // Clear the cart so it's empty for the next order
+                    localStorage.removeItem('zomighty_cart');
+                    localStorage.removeItem('zomighty_restaurant_id');
+
+                } else {
+                    statusMsg.innerText = "❌ Failed: " + (data.error || "Could not place order.");
+                    statusMsg.style.color = "red";
+                    statusMsg.style.display = "block";
+                    btn.innerText = "Try Again";
+                    btn.disabled = false;
+                }
+
+            } catch (error) {
+                console.error("Error:", error);
+                statusMsg.innerText = "❌ Server error. Please try again.";
+                statusMsg.style.color = "red";
+                statusMsg.style.display = "block";
+                btn.innerText = "Try Again";
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

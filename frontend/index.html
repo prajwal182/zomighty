@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zomighty - Order Food Online</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
+        .header { text-align: center; margin-bottom: 40px; }
+        .header h1 { color: #e23744; font-size: 3rem; margin: 0; }
+        .search-bar { margin-top: 20px; padding: 10px 20px; width: 300px; font-size: 16px; border: 1px solid #ccc; border-radius: 25px; }
+        
+        /* Grid Layout for Restaurant Cards */
+        .restaurant-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 0 20px; max-width: 1200px; margin: 0 auto; }
+        
+        /* Individual Card Styling */
+        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: transform 0.2s; cursor: pointer; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+        .card img { width: 100%; height: 180px; object-fit: cover; background-color: #ddd; }
+        .card-body { padding: 15px; }
+        .card-title { font-size: 1.2rem; font-weight: bold; margin: 0 0 5px 0; color: #333; }
+        .card-desc { font-size: 0.9rem; color: #666; margin: 0 0 10px 0; height: 40px; overflow: hidden; }
+        .card-address { font-size: 0.8rem; color: #999; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Zomighty</h1>
+        <p>Discover the best food & drinks in your city</p>
+        <input type="text" id="searchInput" class="search-bar" placeholder="Search for restaurant, cuisine..." onkeyup="handleSearch()">
+    </div>
+
+    <div class="restaurant-grid" id="restaurantContainer">
+        <p style="text-align: center; width: 100%;">Loading delicious restaurants...</p>
+    </div>
+
+    <script>
+        // Your local Flask API URL
+        const API_URL = 'http://127.0.0.1:5000/api/restaurants/';
+
+        // 1. Function to fetch data from the backend
+        async function fetchRestaurants(searchQuery = '') {
+            try {
+                // Construct the URL with the search query if it exists
+                const url = searchQuery ? `${API_URL}?q=${searchQuery}` : API_URL;
+                
+                // Call the API (This is where CORS from Phase 1 protects us!)
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                // Render the data to the screen
+                renderRestaurants(data.restaurants);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                document.getElementById('restaurantContainer').innerHTML = "<p>Failed to load restaurants. Is the Flask server running?</p>";
+            }
+        }
+
+        // 2. Function to draw the HTML cards
+        function renderRestaurants(restaurants) {
+            const container = document.getElementById('restaurantContainer');
+            container.innerHTML = ''; // Clear the loading text
+
+            if (restaurants.length === 0) {
+                container.innerHTML = "<p>No restaurants found. Try a different search!</p>";
+                return;
+            }
+
+            // Loop through each restaurant and create a card
+            // Notice the new onclick attribute!
+            restaurants.forEach(restaurant => {
+                const cardHtml = `
+                    <div class="card" onclick="window.location.href='restaurant.html?id=${restaurant.id}'">
+                        <img src="https://placehold.co/600x400/e23744/white?text=${restaurant.name.charAt(0)}" alt="${restaurant.name}">
+                        <div class="card-body">
+                            <h3 class="card-title">${restaurant.name}</h3>
+                            <p class="card-desc">${restaurant.description}</p>
+                            <p class="card-address">📍 ${restaurant.address}</p>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml; 
+            });
+        }
+
+        // 3. Function to handle typing in the search bar
+        let timeout = null;
+        function handleSearch() {
+            // Wait 300ms after the user stops typing to call the API (Debouncing)
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                const query = document.getElementById('searchInput').value;
+                fetchRestaurants(query);
+            }, 300); 
+        }
+
+        // 4. Start the engine: Fetch all restaurants when the page first loads
+        window.onload = () => fetchRestaurants();
+    </script>
+</body>
+</html>

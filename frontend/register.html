@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Zomighty</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .auth-container { background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        .auth-container h2 { text-align: center; color: #e23744; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #333; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 12px; background-color: #e23744; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        .btn:hover { background-color: #c82333; }
+        .error-msg { color: red; text-align: center; margin-bottom: 15px; display: none; }
+        .success-msg { color: green; text-align: center; margin-bottom: 15px; display: none; }
+        .register-link { text-align: center; margin-top: 15px; display: block; color: #666; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <h2>Create an Account</h2>
+        <p id="errorMsg" class="error-msg"></p>
+        <p id="successMsg" class="success-msg">Account created! Redirecting to login...</p>
+        
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="username">Full Name</label>
+                <input type="text" id="username" required placeholder="John Doe">
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" required placeholder="user@example.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="Create a strong password">
+            </div>
+            <button type="submit" class="btn">Sign Up</button>
+        </form>
+
+        <a href="login.html" class="register-link">Already have an account? Log in</a>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+            const successMsg = document.getElementById('successMsg');
+
+            try {
+                // Send the new user data to the backend
+                const response = await fetch('http://127.0.0.1:5000/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, email: email, password: password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    errorMsg.style.display = 'none';
+                    successMsg.style.display = 'block';
+                    // Wait 2 seconds so they can read the success message, then send to login
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                } else {
+                    errorMsg.innerText = data.error || "Registration failed.";
+                    errorMsg.style.display = 'block';
+                }
+
+            } catch (error) {
+                errorMsg.innerText = "Cannot connect to the server.";
+                errorMsg.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

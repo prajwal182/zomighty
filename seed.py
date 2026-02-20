@@ -1,61 +1,59 @@
-# seed.py
-from app import create_app, db
-from app.models import User, Restaurant, MenuItem
+from app import create_app
+from app.extensions import db
+from app.models import Restaurant, MenuItem # Ensure these match your model names!
+import random
 
-app = create_app() #create_app() is the factory function that sets up our Flask app with all configurations and extensions.
+app = create_app()
 
-def seed_data():
-    """Populates the database with dummy data for testing."""
-    with app.app_context():
-        # 1. Reset the Database (Drop all tables and recreate them)
-        # WARNING: This deletes all data! Only use in Dev.
-        print("🗑️  Dropping old data...")
-        db.drop_all()
-        print("🔨 Creating new tables...")
-        db.create_all()
+with app.app_context():
+    print("Starting the database seed...")
 
-        # 2. Create a Dummy User
-        print("👤 Creating Users...")
-        user1 = User(username="prajwal", email="prajwal@test.com")
-        user1.set_password("password123") # Hashing the password
+    # A list of 20 unique restaurants for good search testing
+    # Added a fake address to every tuple
+    restaurants_data = [
+        ("Burger King", "Flame grilled burgers", "123 Flame Way", "burger.jpg"),
+        ("Pizza Hut", "Cheesy deep dish pizzas", "456 Crust Ave", "pizza.jpg"),
+        ("Sushi Central", "Fresh ocean rolls", "789 Ocean Blvd", "sushi.jpg"),
+        ("Taco Fiesta", "Authentic Mexican street food", "101 Salsa St", "taco.jpg"),
+        ("Spicy Dragon", "Sichuan Chinese cuisine", "202 Wok Ln", "chinese.jpg"),
+        ("Green Leaf Vegan", "100% plant-based bowls", "303 Nature Rd", "vegan.jpg"),
+        ("Curry House", "Rich and spicy Indian curries", "404 Spice Cir", "curry.jpg"),
+        ("Pasta Bella", "Handmade Italian pasta", "505 Garlic Sq", "pasta.jpg"),
+        ("Urban Grill", "Steaks and BBQ", "606 Smoke Dr", "bbq.jpg"),
+        ("Sweet Tooth", "Desserts, cakes, and pastries", "707 Sugar Pl", "dessert.jpg"),
+        ("Morning Brew", "Artisan coffee and bagels", "808 Bean Ct", "coffee.jpg"),
+        ("The Salty Dog", "Fish and chips", "909 Pier Ave", "fish.jpg"),
+        ("Pho Real", "Vietnamese noodle soup", "111 Broth Blvd", "pho.jpg"),
+        ("Kebab Palace", "Middle Eastern wraps", "222 Skewer St", "kebab.jpg"),
+        ("Golden Wok", "Fast and hot stir fry", "333 Noodle Ln", "wok.jpg"),
+        ("Crispy Bites", "Fried chicken and sides", "444 Fryer Rd", "chicken.jpg"),
+        ("Rustic Oven", "Wood-fired artisan breads", "555 Baker St", "bread.jpg"),
+        ("Happy Bowl", "Hawaiian Poke bowls", "666 Island Way", "poke.jpg"),
+        ("Magic Spoon", "Gourmet soups and salads", "777 Greens Cir", "soup.jpg"),
+        ("Midnight Diner", "Late night comfort food", "888 Moon Dr", "diner.jpg"),
+    ]
+
+    # Notice we added 'address' to the unpack variables here:
+    for name, desc, address, img in restaurants_data:
+        # And we pass address=address into the Restaurant creation
+        restaurant = Restaurant(name=name, description=desc, address=address, image_url=img)
+        db.session.add(restaurant)
+        db.session.flush() 
         
-        db.session.add(user1)
-
-        # 3. Create a Restaurant
-        print("🍕 Creating Restaurants...")
-        rest1 = Restaurant(
-            name="Pizza Palace",
-            description="Best pizza in Nashik",
-            address="College Road, Nashik",
-            image_url="https://placehold.co/600x400"
-        )
-        
-        db.session.add(rest1)
-        
-        # 4. Commit to save User & Restaurant so they get IDs
-        db.session.commit() 
-
-        # 5. Create Menu Items (Linked to the Restaurant)
-        print("🍔 Creating Menu Items...")
         item1 = MenuItem(
-            name="Margherita Pizza",
-            description="Classic cheese and tomato",
-            price=250.00,
-            restaurant=rest1  # SQLAlchemy magic: We pass the object, not the ID!
+            name=f"Signature {name.split()[0]}", 
+            price=round(random.uniform(8.99, 15.99), 2), 
+            restaurant_id=restaurant.id
         )
-        
         item2 = MenuItem(
-            name="Garlic Bread",
-            description="Buttery garlic goodness",
-            price=120.50,
-            restaurant=rest1
+            name="Classic Side", 
+            price=round(random.uniform(2.99, 6.99), 2), 
+            restaurant_id=restaurant.id
         )
-
-        db.session.add_all([item1, item2])
         
-        # 6. Final Commit
-        db.session.commit()
-        print("✅ Database seeded successfully!")
+        db.session.add_all([item1, item2])
 
-if __name__ == "__main__":
-    seed_data()
+        
+    # 3. Commit everything to MySQL permanently
+    db.session.commit()
+    print("Successfully seeded 20 restaurants and 40 menu items into MySQL!")

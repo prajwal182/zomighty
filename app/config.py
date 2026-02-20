@@ -20,7 +20,11 @@ class Config:
     # We are using SQLite for now (stored in the 'app' folder as 'app.db').
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URI') or \
     #     'sqlite:///' + os.path.join(basedir, 'app.db')
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'app.db')
+    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'app.db'))
+    # Note: The above line first checks for DATABASE_URL in the environment variables. If it doesn't find it, 
+    # it defaults to using a SQLite database located at '../app.db' relative to this config.py file. 
+    # This allows for easy switching between a local SQLite database and a production database (like MySQL) by just setting the DATABASE_URL environment variable.
+
 
 
     # 3. PERFORMANCE: This disables a feature we don't need (tracking modifications consumes memory).
