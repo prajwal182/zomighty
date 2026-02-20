@@ -6,6 +6,7 @@ from app.api.restaurants import restaurants_bp
 from app.api.orders import orders_bp
 from app.errors import register_error_handlers
 
+
 def create_app(config_class=Config):  # <--- 1. The "Machine" starts here
     app = Flask(__name__)             # <--- 2. Create a blank car chassis
     app.config.from_object(config_class) # <--- 3. Install the specific parts (settings)
