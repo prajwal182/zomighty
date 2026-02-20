@@ -5,6 +5,7 @@ from app.config import Config
 from app.api.restaurants import restaurants_bp
 from app.api.orders import orders_bp
 from app.errors import register_error_handlers
+from flask_cors import CORS # For handling Cross-Origin Resource Sharing (CORS)
 
 
 def create_app(config_class=Config):  # <--- 1. The "Machine" starts here
@@ -14,7 +15,7 @@ def create_app(config_class=Config):  # <--- 1. The "Machine" starts here
     # Initialize Flask extensions
     db.init_app(app)                  # <--- 4. Plug in the engine (Database)
     jwt.init_app(app)                 # <--- Plug in the JWT system for authentication
-
+    CORS(app)                         # <--- Plug in CORS to allow cross-origin requests (e.g., from React frontend)
 
     # --- REGISTER BLUEPRINTS HERE ---
     from app.api.auth import auth_bp
